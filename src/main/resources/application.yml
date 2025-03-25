@@ -1,0 +1,64 @@
+server:
+  port: 8082
+  address: 192.168.100.193
+  # address: 172.20.10.3 # Địa chỉ mạng nội bộ (chỉ bật 1 dòng)
+
+spring:
+  application:
+    name: Movie-API
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/movie
+    username: root
+    password: 110403
+    # driver-class-name: com.mysql.cj.jdbc.Driver # (Spring Boot mới không cần khai báo)
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # Cấu hình MinIO (Lưu trữ video)
+  minio:
+    endpoint: http://localhost:9000
+    access-key: Q7iuwwXWB1Th8fYRQ5b3
+    secret-key: 3Kxk9gXH1Wr0FG52IWnMhz6lU4XSeYJbuM9G8cnm
+    bucket-name: thanh
+
+  # Cấu hình upload file
+  servlet:
+    multipart:
+      max-file-size: 1GB
+      max-request-size: 1GB
+
+  # Cấu hình JWT Token (Authentication)
+  jwt:
+    signer-key: "XIUMOY1zMZppH8gTKyXtLu7PJjG5zbI5N8vq28HbQFwO4+Av619325j6k9F3rMOG4pKwH0DIYYmSDorCex882/I3fz+vT4QDoF7YphgGm1J6O34bJJUqi0ZUBJtOzWw8"
+
+  # Cấu hình Email SMTP (Gửi email xác thực)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: zzthanh1104zz@gmail.com
+    password: lgofdlwsofqdtdpa
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  # Cấu hình thư mục lưu video tạm thời trước khi upload lên MinIO
+  video:
+    output-dir: "/tmp/videos"
+  ffmpeg:
+    path: "/usr/bin/ffmpeg"
+
+# Cấu hình logging
+logging:
+  level:
+    org.springframework.web: DEBUG
+    com.example: DEBUG
