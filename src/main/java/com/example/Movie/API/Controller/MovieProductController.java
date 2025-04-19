@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 
 
 @RestController
@@ -41,14 +42,7 @@ public class MovieProductController {
     movieProductService.deleteEntity(id);
     return ResponseBuilder.create().status(HttpStatus.OK).body("delete thanh cong").build();
   }
-  @GetMapping
-  public ResponseEntity<Object> getAllMovies(Pagination pageable) {
-    return ResponseBuilder.create().body(movieProductService.getAll(pageable)).status(HttpStatus.OK).build();
-  }
-  @GetMapping("/{id}")
-    public ResponseEntity<Object> getMovieById(@PathVariable long id) {
-    return ResponseBuilder.create().body(movieProductService.getById(id)).status(HttpStatus.OK).build();
-    }
+
 
     // like video
     @PutMapping("/{id}/like")
@@ -78,6 +72,22 @@ public class MovieProductController {
     headers.setContentType(MediaType.parseMediaType(contentType));
     return new ResponseEntity<>(fileData, headers, HttpStatus.OK);
   }
-
+  ///
+  @GetMapping("/search")
+  public ResponseEntity<Object> searchMovies(@RequestParam("title") String title) {
+    return ResponseBuilder.create().status(HttpStatus.OK).body(movieProductService.searchMoviesByTitle(title)).build();
+  }
+  @GetMapping("/{id}/with-video")
+  public ResponseEntity<Object> getMovieWithVideo(@PathVariable Long id) {
+    return ResponseBuilder.create().status(HttpStatus.OK).body(movieProductService.getMovieProductWithVideo(id)).build();
+  }
+  @GetMapping
+  public ResponseEntity<Object> getAllMovies(Pagination pageable) {
+    return ResponseBuilder.create().body(movieProductService.getAll(pageable)).status(HttpStatus.OK).build();
+  }
+  @GetMapping("/{id}")
+  public ResponseEntity<Object> getMovieById(@PathVariable long id) {
+    return ResponseBuilder.create().body(movieProductService.getById(id)).status(HttpStatus.OK).build();
+  }
 
 }

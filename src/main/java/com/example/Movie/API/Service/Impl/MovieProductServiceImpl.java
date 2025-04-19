@@ -6,7 +6,7 @@ import com.example.Movie.API.Entity.*;
 import com.example.Movie.API.Exception.NotFoundException;
 import com.example.Movie.API.Mapper.MovieProductMapper;
 import com.example.Movie.API.Repository.AuthorRepository;
-import com.example.Movie.API.Repository.CategoryRepository;
+import com.example.Movie.API.Repository.GenreRepository;
 import com.example.Movie.API.Repository.MovieProductRepository;
 import com.example.Movie.API.Repository.PerformerRepository;
 import com.example.Movie.API.Service.MovieProductService;
@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class MovieProductServiceImpl implements MovieProductService {
@@ -32,7 +31,7 @@ public class MovieProductServiceImpl implements MovieProductService {
   @Autowired
   private MinioServiceImpl minioService;
   @Autowired
-  private CategoryRepository categoryRepository;
+  private GenreRepository genreRepository;
   @Autowired
   private AuthorRepository authorRepository;
   @Autowired
@@ -42,9 +41,9 @@ public class MovieProductServiceImpl implements MovieProductService {
   @PreAuthorize("hasRole('ADMIN')")
   @Override
   public MovieProductResponse createEntity(MovieProductRequest request) {
-    Category category = categoryRepository.findById(request.getCategoryId()).orElse(null);
+    Genre genre = genreRepository.findById(request.getCategoryId()).orElse(null);
     MovieProduct movieProduct = movieProductMapper.requestToEntity(request);
-    movieProduct.setCategory(category);
+    movieProduct.setGenre(genre);
     // quan he N- N
     Set<Author> authors = new HashSet<>();
     for(Long authorId : request.getAuthor()){
@@ -70,33 +69,52 @@ public class MovieProductServiceImpl implements MovieProductService {
   @PreAuthorize("hasRole('ADMIN')")
   @Override
   public MovieProductResponse updateEntity(long id, MovieProductRequest entity) {
-    MovieProduct movieProduct = movieProductRepository.findById(id).orElse(null);
-    Category category = categoryRepository.findById(entity.getCategoryId()).orElse(null);
-    assert movieProduct != null;
-    movieProduct.setCategory(category);
-    // quan he N- N
-    Set<Author> authors = new HashSet<>();
-    for(Long authorId : entity.getAuthor()){
-      Author author = authorRepository.findById(authorId).orElseThrow(() -> new NotFoundException("Not Found Author"));
-      authors.add(author);
-    }
-    movieProduct.setAuthor(authors);
+    MovieProduct movieProduct = movieProductRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Movie Product Not Found"));
 
-    // quan he N- N
-    Set<Performer> performers = new HashSet<>();
-    for(Long performerId : entity.getPerformer()){
-      Performer performer = performerRepository.findById(performerId).orElseThrow(() -> new NotFoundException("Not Found Performer"));
-      performers.add(performer);
+    // Update Genre nếu có
+    if (entity.getCategoryId() != null) {
+      Genre genre = genreRepository.findById(entity.getCategoryId())
+              .orElseThrow(() -> new NotFoundException("Genre Not Found"));
+      movieProduct.setGenre(genre);
     }
-    movieProduct.setPerformer(performers);
-    //upload anh
-    final String fileStr = "imgMovie/" + entity.getImage().getOriginalFilename();
-    minioService.upLoadFile(entity.getImage(), fileStr);
-    movieProduct.setImgMovie(fileStr);
-    movieProductMapper.updateEntity(entity,movieProduct);
+
+    // Quan hệ N - N với Author
+    if (entity.getAuthor() != null) {
+      Set<Author> authors = new HashSet<>();
+      for (Long authorId : entity.getAuthor()) {
+        Author author = authorRepository.findById(authorId)
+                .orElseThrow(() -> new NotFoundException("Author Not Found"));
+        authors.add(author);
+      }
+      movieProduct.setAuthor(authors);
+    }
+
+    // Quan hệ N - N với Performer
+    if (entity.getPerformer() != null) {
+      Set<Performer> performers = new HashSet<>();
+      for (Long performerId : entity.getPerformer()) {
+        Performer performer = performerRepository.findById(performerId)
+                .orElseThrow(() -> new NotFoundException("Performer Not Found"));
+        performers.add(performer);
+      }
+      movieProduct.setPerformer(performers);
+    }
+
+    // Upload ảnh nếu có
+    if (entity.getImage() != null && !entity.getImage().isEmpty()) {
+      final String fileStr = "imgMovie/" + entity.getImage().getOriginalFilename();
+      minioService.upLoadFile(entity.getImage(), fileStr);
+      movieProduct.setImgMovie(fileStr);
+    }
+
+    // Cập nhật các field đơn khác (nội dung, tiêu đề, thời lượng, ...)
+    movieProductMapper.updateEntity(entity, movieProduct);
+
     movieProductRepository.save(movieProduct);
     return movieProductMapper.toDTO(movieProduct);
   }
+
 
   @Override
   public void deleteEntity(long id) {
@@ -160,6 +178,18 @@ public class MovieProductServiceImpl implements MovieProductService {
       return movieProductMapper.toDTO(movieProduct);
     }
     throw new RuntimeException("Movie not found");
+  }
+
+  @Override
+  public List<MovieProduct> searchMoviesByTitle(String title) {
+    return movieProductRepository.findByTitleContaining(title);
+  }
+
+  @Override
+  public MovieProductResponse getMovieProductWithVideo(long id) {
+    MovieProduct movieProduct = movieProductRepository.findByIdWithMovieVideo(id)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy MovieProduct với id: " + id));
+    return movieProductMapper.toDTO(movieProduct);
   }
 
 }

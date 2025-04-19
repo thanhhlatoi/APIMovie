@@ -25,7 +25,8 @@ public class MovieProduct  extends AbstractEntity<Long> {
   private String imgMovie;
   @ManyToOne
   @JoinColumn(name = "cattegotyId", nullable = false)
-  private Category category;
+  private Genre genre;
+
   @OneToOne(mappedBy = "movieProduct", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   @JsonIgnore
   private MovieVideo movieVideo;

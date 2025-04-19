@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class ReviewResponse {
+    private Long id;
     private User user;
     private MovieProduct movieProduct;
     private Integer rating;

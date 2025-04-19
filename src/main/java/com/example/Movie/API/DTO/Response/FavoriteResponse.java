@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class FavoriteResponse {
+    private Long id;
     private User user;
     private MovieProduct movieProduct;
 

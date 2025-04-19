@@ -9,6 +9,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PerformerResponse {
+    private Long id;
     private String fullName;
     private Date birthday;
     private boolean gender;

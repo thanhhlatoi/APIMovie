@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class MovieVideoResponse {
+  private Long id;
   private String videoFilm;
   private MovieProduct movieProduct;
   private LocalDateTime watchedAt;

@@ -2,9 +2,6 @@ package com.example.Movie.API.Service.Impl;
 
 import com.example.Movie.API.DTO.Request.MovieVideoRequest;
 import com.example.Movie.API.DTO.Response.MovieVideoResponse;
-import com.example.Movie.API.Entity.Author;
-import com.example.Movie.API.Entity.Category;
-import com.example.Movie.API.Entity.MovieProduct;
 import com.example.Movie.API.Entity.MovieVideo;
 import com.example.Movie.API.Exception.NotFoundException;
 import com.example.Movie.API.Repository.MovieProductRepository;
@@ -14,9 +11,6 @@ import com.example.Movie.API.Utils.Pagination;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class MovieVideoServiceImpl implements MovieVideoService {

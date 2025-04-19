@@ -1,6 +1,7 @@
 server:
   port: 8082
-  address: 192.168.100.193
+#  address: 192.168.100.193
+#  address: 192.168.0.125
   # address: 172.20.10.3 # Địa chỉ mạng nội bộ (chỉ bật 1 dòng)
 
 spring:

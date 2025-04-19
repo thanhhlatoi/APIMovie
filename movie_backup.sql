@@ -16,13 +16,13 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `category`
+-- Table structure for table `genre`
 --
 
-DROP TABLE IF EXISTS `category`;
+DROP TABLE IF EXISTS `genre`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `category` (
+CREATE TABLE `genre` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `active` bit(1) NOT NULL,
   `name` varchar(255) DEFAULT NULL,
@@ -31,13 +31,13 @@ CREATE TABLE `category` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `category`
+-- Dumping data for table `genre`
 --
 
-LOCK TABLES `category` WRITE;
-/*!40000 ALTER TABLE `category` DISABLE KEYS */;
-INSERT INTO `category` VALUES (1,_binary '\0','Phim hanh dong'),(2,_binary '\0','Phim hoat hinh'),(3,_binary '','Phim ma'),(4,_binary '','Phim natra');
-/*!40000 ALTER TABLE `category` ENABLE KEYS */;
+LOCK TABLES `genre` WRITE;
+/*!40000 ALTER TABLE `genre` DISABLE KEYS */;
+INSERT INTO `genre` VALUES (1,_binary '\0','Phim hanh dong'),(2,_binary '\0','Phim hoat hinh'),(3,_binary '','Phim ma'),(4,_binary '','Phim natra');
+/*!40000 ALTER TABLE `genre` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -106,7 +106,7 @@ CREATE TABLE `movie_category` (
   PRIMARY KEY (`id`),
   KEY `FKhkem46gi7yq1019e1j8hlvp9y` (`category_id`),
   KEY `FKl7s160aql6owkh6whwtxnerw9` (`movie_product_id`),
-  CONSTRAINT `FKhkem46gi7yq1019e1j8hlvp9y` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`),
+  CONSTRAINT `FKhkem46gi7yq1019e1j8hlvp9y` FOREIGN KEY (`category_id`) REFERENCES `genre` (`id`),
   CONSTRAINT `FKl7s160aql6owkh6whwtxnerw9` FOREIGN KEY (`movie_product_id`) REFERENCES `movie_product` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -139,7 +139,7 @@ CREATE TABLE `movie_product` (
   `title` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `FKsfkgqpv8l9j6w51aa1srprxb2` (`cattegoty_id`),
-  CONSTRAINT `FKsfkgqpv8l9j6w51aa1srprxb2` FOREIGN KEY (`cattegoty_id`) REFERENCES `category` (`id`)
+  CONSTRAINT `FKsfkgqpv8l9j6w51aa1srprxb2` FOREIGN KEY (`cattegoty_id`) REFERENCES `genre` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

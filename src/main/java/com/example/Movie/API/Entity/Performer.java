@@ -12,7 +12,10 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-@Table(name = "performer")
+@Table(name = "" +
+        "" +
+        "" +
+        "")
 public class Performer extends AbstractEntity<Long> {
   private String fullName;
   private Date birthday;

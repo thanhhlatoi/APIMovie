@@ -1,11 +1,8 @@
 package com.example.Movie.API.Controller;
 
-import com.example.Movie.API.DTO.Request.CategoryRequest;
 import com.example.Movie.API.DTO.Request.UserCreateRequest;
 import com.example.Movie.API.DTO.Request.UserUpdateRequest;
 import com.example.Movie.API.DTO.Response.ResponseBuilder;
-import com.example.Movie.API.DTO.Response.UserResponse;
-import com.example.Movie.API.Entity.User;
 import com.example.Movie.API.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

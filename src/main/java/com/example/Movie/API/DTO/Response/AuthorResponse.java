@@ -11,5 +11,9 @@ import java.util.Date;
 @NoArgsConstructor
 public class AuthorResponse {
   private String fullName;
+  private Date birthday;
+  private boolean gender;
+  private String country;
+  private String describe;
   private String avatar;
 }

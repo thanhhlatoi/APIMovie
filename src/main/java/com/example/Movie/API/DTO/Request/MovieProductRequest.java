@@ -1,13 +1,11 @@
 package com.example.Movie.API.DTO.Request;
 
-import com.example.Movie.API.Entity.Category;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Data
@@ -23,7 +21,7 @@ public class MovieProductRequest {
   private int dislikes;
   private int views;
   private MultipartFile image;
-  private long categoryId;
+  private Long categoryId;
   private Set<Long> author ;
   private Set<Long> performer ;
 }

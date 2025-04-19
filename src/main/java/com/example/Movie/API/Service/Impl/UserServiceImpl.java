@@ -46,7 +46,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserResponse createUser(UserCreateRequest request) {
-    if (usersRepository.existsByEmail(request.getEmail())) throw new NotFoundException("This email already exists");
+    if (usersRepository.existsByEmail(request.getEmail())) throw new NotFoundException("Email này đã tồn tại");
     User user = userMapper.requestToEntity(request);
     //ma hoa mat khau
     user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -57,21 +57,18 @@ public class UserServiceImpl implements UserService {
 
     if (strRoles == null) {
       Role userRole = roleRepository.findByName(RoleManager.USERS.name())
-              .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+              .orElseThrow(() -> new RuntimeException("Lỗi: Không tìm thấy vai trò."));
       roles.add(userRole);
     } else {
       strRoles.forEach(role -> {
-        switch (role) {
-          case "admin":
-            Role adminRole = roleRepository.findByName(RoleManager.ADMIN.name())
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(adminRole);
-
-            break;
-          default:
-            Role userRole = roleRepository.findByName(RoleManager.USERS.name())
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(userRole);
+        if (role.equals("admin")) {
+          Role adminRole = roleRepository.findByName(RoleManager.ADMIN.name())
+                  .orElseThrow(() -> new RuntimeException("Lỗi: Không tìm thấy vai trò."));
+          roles.add(adminRole);
+        } else {
+          Role userRole = roleRepository.findByName(RoleManager.USERS.name())
+                  .orElseThrow(() -> new RuntimeException("Lỗi: Không tìm thấy vai trò."));
+          roles.add(userRole);
         }
       });
     }
@@ -83,24 +80,51 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserResponse updateUser(long id, UserUpdateRequest request) {
-    User user = usersRepository.findById(id).orElse(null);
-    if (user == null) {
-      return null;
+    User user = usersRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng với id: " + id));
+
+    // Cập nhật các trường của người dùng nếu được cung cấp trong yêu cầu
+    if (request.getFirstName() != null) {
+      user.setFirstname(request.getFirstName());
     }
+    if (request.getLastName() != null) {
+      user.setLastname(request.getLastName());
+    }
+    // Cập nhật họ tên đầy đủ nếu tên hoặc họ được cập nhật
+    if (request.getFirstName() != null || request.getLastName() != null) {
+      String firstName = request.getFirstName() != null ? request.getFirstName() : user.getFirstname();
+      String lastName = request.getLastName() != null ? request.getLastName() : user.getLastname();
+      user.setFullName(firstName + " " + lastName);
+    }
+    if (request.getPhoneNumber() != null) {
+      user.setPhoneNumber(request.getPhoneNumber());
+    }
+    if (request.getDateOfBirth() != null) {
+      // Chuyển đổi java.util.Date sang java.sql.Date
+      user.setDateOfBirth(new java.sql.Date(request.getDateOfBirth().getTime()));
+    }
+    if (request.getAddress() != null) {
+      user.setAddress(request.getAddress());
+    }
+    // Giới tính là một boolean nguyên thủy, nên nó luôn được cung cấp
+    user.setGender(request.isGender());
 
-
-    final String fileStr = "user/" + request.getFileAvatar().getOriginalFilename();
-    minioService.upLoadFile(request.getFileAvatar(), fileStr);
-    user.setProfilePictureUrl(fileStr);
+    // Cập nhật ảnh đại diện nếu được cung cấp
+    if (request.getFileAvatar() != null && !request.getFileAvatar().isEmpty()) {
+      final String fileStr = "user/" + request.getFileAvatar().getOriginalFilename();
+      minioService.upLoadFile(request.getFileAvatar(), fileStr);
+      user.setProfilePictureUrl(fileStr);
+    }
 
     usersRepository.save(user);
     return userMapper.toDTO(user);
-
   }
   @PreAuthorize("hasRole('ADMIN')")
   @Override
   public void deleteUser(long id) {
-
+    User user = usersRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng với id: " + id));
+    usersRepository.delete(user);
   }
   @PreAuthorize("hasRole('USERS')")
   @Override
@@ -125,23 +149,24 @@ public class UserServiceImpl implements UserService {
   @Override
   public List<UserResponse> getAllUser() {
     List<User> users = usersRepository.findAll();
-    return users.stream().map(user -> {
-      return userMapper.toDTO(user);
-    }).collect(Collectors.toList());
+    return users.stream().map(user -> userMapper.toDTO(user)).collect(Collectors.toList());
   }
 
   @PreAuthorize("hasRole('ADMIN')")
   @Override
   public UserResponse getUserById(long id) {
-    var user = usersRepository.findById(id).orElse(null);
-    // Lấy danh sách bài viết của user và chuyển đổi sang DTO
+    User user = usersRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng với id: " + id));
+
+    // Lấy danh sách yêu thích của người dùng và chuyển đổi sang DTO
     List<Favorite> favorites = favoriteRepository.findAllByUserId(user.getId());
     List<FavoriteResponse> favoriteResponses = favorites.stream()
             .map(favoriteMapper::toDTO)
             .toList();
+
     UserResponse userResponse = userMapper.toDTO(user);
     userResponse.setFavoritesResponses(favoriteResponses);
-//    return user == null ? null : userMapper.toDTO(user);
+
     return userResponse;
   }
 }

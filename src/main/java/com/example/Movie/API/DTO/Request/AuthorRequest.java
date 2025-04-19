@@ -16,5 +16,5 @@ public class AuthorRequest {
   private boolean gender;
   private String country;
   private String describe;
-//  private MultipartFile fileAvatar;
+  private MultipartFile fileAvatar;
 }
