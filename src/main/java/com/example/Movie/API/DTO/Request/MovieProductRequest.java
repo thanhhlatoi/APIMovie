@@ -21,7 +21,8 @@ public class MovieProductRequest {
   private int dislikes;
   private int views;
   private MultipartFile image;
+  private Long genreId;
+  private Long authorId ;
   private Long categoryId;
-  private Set<Long> author ;
   private Set<Long> performer ;
 }

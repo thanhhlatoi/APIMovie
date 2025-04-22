@@ -20,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.util.HashSet;
@@ -46,36 +47,19 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserResponse createUser(UserCreateRequest request) {
-    if (usersRepository.existsByEmail(request.getEmail())) throw new NotFoundException("Email này đã tồn tại");
+    if (usersRepository.existsByEmail(request.getEmail())) {
+      throw new NotFoundException("Email này đã tồn tại");
+    }
+
     User user = userMapper.requestToEntity(request);
-    //ma hoa mat khau
     user.setPassword(passwordEncoder.encode(user.getPassword()));
     user.setFullName(user.getFullName());
-    //set role de phan quyen
-    Set<String> strRoles = request.getRole();
-    Set<Role> roles = new HashSet<>();
 
-    if (strRoles == null) {
-      Role userRole = roleRepository.findByName(RoleManager.USERS.name())
-              .orElseThrow(() -> new RuntimeException("Lỗi: Không tìm thấy vai trò."));
-      roles.add(userRole);
-    } else {
-      strRoles.forEach(role -> {
-        if (role.equals("admin")) {
-          Role adminRole = roleRepository.findByName(RoleManager.ADMIN.name())
-                  .orElseThrow(() -> new RuntimeException("Lỗi: Không tìm thấy vai trò."));
-          roles.add(adminRole);
-        } else {
-          Role userRole = roleRepository.findByName(RoleManager.USERS.name())
-                  .orElseThrow(() -> new RuntimeException("Lỗi: Không tìm thấy vai trò."));
-          roles.add(userRole);
-        }
-      });
-    }
+    Set<Role> roles = resolveRoles(request.getRole());
     user.setRoles(roles);
+
     usersRepository.save(user);
     return userMapper.toDTO(user);
-
   }
 
   @Override
@@ -83,42 +67,13 @@ public class UserServiceImpl implements UserService {
     User user = usersRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng với id: " + id));
 
-    // Cập nhật các trường của người dùng nếu được cung cấp trong yêu cầu
-    if (request.getFirstName() != null) {
-      user.setFirstname(request.getFirstName());
-    }
-    if (request.getLastName() != null) {
-      user.setLastname(request.getLastName());
-    }
-    // Cập nhật họ tên đầy đủ nếu tên hoặc họ được cập nhật
-    if (request.getFirstName() != null || request.getLastName() != null) {
-      String firstName = request.getFirstName() != null ? request.getFirstName() : user.getFirstname();
-      String lastName = request.getLastName() != null ? request.getLastName() : user.getLastname();
-      user.setFullName(firstName + " " + lastName);
-    }
-    if (request.getPhoneNumber() != null) {
-      user.setPhoneNumber(request.getPhoneNumber());
-    }
-    if (request.getDateOfBirth() != null) {
-      // Chuyển đổi java.util.Date sang java.sql.Date
-      user.setDateOfBirth(new java.sql.Date(request.getDateOfBirth().getTime()));
-    }
-    if (request.getAddress() != null) {
-      user.setAddress(request.getAddress());
-    }
-    // Giới tính là một boolean nguyên thủy, nên nó luôn được cung cấp
-    user.setGender(request.isGender());
-
-    // Cập nhật ảnh đại diện nếu được cung cấp
-    if (request.getFileAvatar() != null && !request.getFileAvatar().isEmpty()) {
-      final String fileStr = "user/" + request.getFileAvatar().getOriginalFilename();
-      minioService.upLoadFile(request.getFileAvatar(), fileStr);
-      user.setProfilePictureUrl(fileStr);
-    }
+    updateUserBasicInfo(user, request);
+    updateUserAvatar(user, request.getFileAvatar());
 
     usersRepository.save(user);
     return userMapper.toDTO(user);
   }
+
   @PreAuthorize("hasRole('ADMIN')")
   @Override
   public void deleteUser(long id) {
@@ -126,6 +81,7 @@ public class UserServiceImpl implements UserService {
             .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng với id: " + id));
     usersRepository.delete(user);
   }
+
   @PreAuthorize("hasRole('USERS')")
   @Override
   public UserResponse getMyInFor() {
@@ -169,4 +125,57 @@ public class UserServiceImpl implements UserService {
 
     return userResponse;
   }
+
+  // set role cho User
+  private Set<Role> resolveRoles(Set<String> strRoles) {
+    Set<Role> roles = new HashSet<>();
+    if (strRoles == null || strRoles.isEmpty()) {
+      Role defaultRole = roleRepository.findByName(RoleManager.USERS.name())
+              .orElseThrow(() -> new RuntimeException("Không tìm thấy vai trò USERS"));
+      roles.add(defaultRole);
+    } else {
+      for (String role : strRoles) {
+        Role r = roleRepository.findByName(role.toUpperCase())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy vai trò: " + role));
+        roles.add(r);
+      }
+    }
+    return roles;
+  }
+  //Update User
+  private void updateUserBasicInfo(User user, UserUpdateRequest request) {
+    if (request.getFirstName() != null) {
+      user.setFirstname(request.getFirstName());
+    }
+    if (request.getLastName() != null) {
+      user.setLastname(request.getLastName());
+    }
+    if (request.getFirstName() != null || request.getLastName() != null) {
+      String firstName = request.getFirstName() != null ? request.getFirstName() : user.getFirstname();
+      String lastName = request.getLastName() != null ? request.getLastName() : user.getLastname();
+      user.setFullName(firstName + " " + lastName);
+    }
+    if (request.getPhoneNumber() != null) {
+      user.setPhoneNumber(request.getPhoneNumber());
+    }
+    if (request.getDateOfBirth() != null) {
+      user.setDateOfBirth(new java.sql.Date(request.getDateOfBirth().getTime()));
+    }
+    if (request.getAddress() != null) {
+      user.setAddress(request.getAddress());
+    }
+
+    // Giới tính luôn có giá trị (boolean primitive)
+    user.setGender(request.isGender());
+  }
+  //Update Avatar
+  private void updateUserAvatar(User user, MultipartFile fileAvatar) {
+    if (fileAvatar != null && !fileAvatar.isEmpty()) {
+      final String filePath = "user/" + fileAvatar.getOriginalFilename();
+      minioService.upLoadFile(fileAvatar, filePath);
+      user.setProfilePictureUrl(filePath);
+    }
+  }
+
+
 }

@@ -51,13 +51,7 @@ public class GenreServiceImpl implements GenreService {
     return categories.map(categoryMapper::toDTO);
   }
 
-//  @Override
-//  public List<CategoryResponse> getAll() {
-//    List<Category> users = categoryRepository.findAll();
-//    return users.stream().map(user -> {
-//      return categoryMapper.toDTO(user);
-//    }).collect(Collectors.toList());
-//  }
+
   @PreAuthorize("hasRole('ADMIN')")
   @Override
   public GenreResponse getById(long id) {

@@ -19,12 +19,12 @@ public class AuthorController {
   @Autowired
   private AuthorService authorService;
   @PostMapping
-  public ResponseEntity<Object> addAuthor(@RequestBody AuthorRequest request) throws Exception {
+  public ResponseEntity<Object> addAuthor(@ModelAttribute AuthorRequest request) throws Exception {
     return ResponseBuilder.create().body(authorService.createEntity(request)).status(HttpStatus.OK).build();
   }
 
   @PutMapping("/update/{id}")
-  public ResponseEntity<Object> updateAuthor(@PathVariable long id, @RequestBody AuthorRequest request) {
+  public ResponseEntity<Object> updateAuthor(@PathVariable long id, @ModelAttribute AuthorRequest request) {
     return ResponseBuilder.create().body(authorService.updateEntity(id, request)).status(HttpStatus.OK).build();
   }
 

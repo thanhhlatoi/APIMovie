@@ -56,13 +56,6 @@ public class FavoriteServiceImpl implements FavoriteService {
         return favorites.map(favoriteMapper::toDTO);
     }
 
-//    @Override
-//    public List<FavoriteResponse> getAll() {
-//        List<Favorite> favorites = favoriteRepository.findAll();
-//        return favorites.stream().map(user -> {
-//            return favoriteMapper.toDTO(user);
-//        }).collect(Collectors.toList());
-//    }
 
     @Override
     public FavoriteResponse getById(long id) {

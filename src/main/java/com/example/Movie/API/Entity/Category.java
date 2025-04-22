@@ -7,11 +7,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Table(name = "genre")
+@Table(name = "category")
 @NoArgsConstructor
 @Entity
 @AllArgsConstructor
-public class Genre extends AbstractEntity<Long> {
+public class Category extends AbstractEntity<Long> {
   private String name;
   private boolean active;
 }

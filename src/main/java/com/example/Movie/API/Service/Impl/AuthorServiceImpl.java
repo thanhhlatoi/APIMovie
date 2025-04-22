@@ -31,23 +31,23 @@ public class AuthorServiceImpl implements AuthorService {
   @Override
   public AuthorResponse createEntity(AuthorRequest request) throws Exception {
     Author author = authorMapper.requestToEntity(request);
-//    final String fileStr = "author/" + request.getFileAvatar().getOriginalFilename();
-//    minioService.upLoadFile(request.getFileAvatar(), fileStr);
-//    author.setAvatar(fileStr);
+    final String fileStr = "author/" + request.getFileAvatar().getOriginalFilename();
+    minioService.upLoadFile(request.getFileAvatar(), fileStr);
+    author.setAvatar(fileStr);
     authorRepository.save(author);
     return authorMapper.toDTO(author);
   }
-
+  @PreAuthorize("hasRole('ADMIN')")
   @Override
   public AuthorResponse updateEntity(long id, AuthorRequest entity) {
     Author author = authorRepository.findById(id).orElse(null);
-//    final String fileStr = "author/" + entity.getFileAvatar().getOriginalFilename();
-//    minioService.upLoadFile(entity.getFileAvatar(), fileStr);
-//    assert author != null;
-//    author.setAvatar(fileStr);
+    final String fileStr = "author/" + entity.getFileAvatar().getOriginalFilename();
+    minioService.upLoadFile(entity.getFileAvatar(), fileStr);
+    assert author != null;
+    author.setAvatar(fileStr);
     authorMapper.updateEntity(entity,author);
     authorRepository.save(author);
-    return null;
+    return authorMapper.toDTO(author);
   }
   @PreAuthorize("hasRole('ADMIN')")
   @Override
@@ -63,13 +63,7 @@ public class AuthorServiceImpl implements AuthorService {
 
   @PreAuthorize("hasRole('ADMIN')")
 
-//  @Override
-//  public List<AuthorResponse> getAll() {
-//    List<Author> author = authorRepository.findAll();
-//    return author.stream().map(user -> {
-//      return authorMapper.toDTO(user);
-//    }).collect(Collectors.toList());
-//  }
+
 
   @Override
   public AuthorResponse getById(long id) {

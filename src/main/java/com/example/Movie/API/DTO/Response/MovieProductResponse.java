@@ -1,5 +1,7 @@
 package com.example.Movie.API.DTO.Response;
 
+import com.example.Movie.API.Entity.Author;
+import com.example.Movie.API.Entity.Category;
 import com.example.Movie.API.Entity.Genre;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +25,7 @@ public class MovieProductResponse {
   private int views;
   private String imgMovie;
   private Genre genre;
-  private Set<AuthorResponse> author;
+  private Author author;
+  private Category category;
   private Set<PerformerResponse> performer;
 }

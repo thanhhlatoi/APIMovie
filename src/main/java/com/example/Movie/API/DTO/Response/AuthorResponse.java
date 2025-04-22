@@ -14,6 +14,6 @@ public class AuthorResponse {
   private Date birthday;
   private boolean gender;
   private String country;
-  private String describe;
+  private String description;
   private String avatar;
 }

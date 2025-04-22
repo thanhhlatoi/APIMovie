@@ -5,10 +5,7 @@ import com.example.Movie.API.DTO.Response.MovieProductResponse;
 import com.example.Movie.API.Entity.*;
 import com.example.Movie.API.Exception.NotFoundException;
 import com.example.Movie.API.Mapper.MovieProductMapper;
-import com.example.Movie.API.Repository.AuthorRepository;
-import com.example.Movie.API.Repository.GenreRepository;
-import com.example.Movie.API.Repository.MovieProductRepository;
-import com.example.Movie.API.Repository.PerformerRepository;
+import com.example.Movie.API.Repository.*;
 import com.example.Movie.API.Service.MovieProductService;
 
 import com.example.Movie.API.Utils.Pagination;
@@ -36,21 +33,22 @@ public class MovieProductServiceImpl implements MovieProductService {
   private AuthorRepository authorRepository;
   @Autowired
   private PerformerRepository performerRepository;
-  int i = 1;
-
+  @Autowired
+  private CategoryRepository categoryRepository;
   @PreAuthorize("hasRole('ADMIN')")
   @Override
   public MovieProductResponse createEntity(MovieProductRequest request) {
-    Genre genre = genreRepository.findById(request.getCategoryId()).orElse(null);
+    //Quan he 1 - N
+    Genre genre = genreRepository.findById(request.getGenreId()).orElse(null);
     MovieProduct movieProduct = movieProductMapper.requestToEntity(request);
     movieProduct.setGenre(genre);
-    // quan he N- N
-    Set<Author> authors = new HashSet<>();
-    for(Long authorId : request.getAuthor()){
-      Author author = authorRepository.findById(authorId).orElseThrow(() -> new NotFoundException("Not Found Author"));
-      authors.add(author);
-    }
-    movieProduct.setAuthor(authors);
+    Author author = authorRepository.findById(request.getAuthorId()).orElse(null);
+     movieProduct = movieProductMapper.requestToEntity(request);
+     movieProduct.setAuthor(author);
+     Category category = categoryRepository.findById(request.getCategoryId()).orElse(null);
+     movieProduct = movieProductMapper.requestToEntity(request);
+     movieProduct.setCategory(category);
+
     // quan he N- N
     Set<Performer> performers = new HashSet<>();
     for(Long performerId : request.getPerformer()){
@@ -73,21 +71,16 @@ public class MovieProductServiceImpl implements MovieProductService {
             .orElseThrow(() -> new NotFoundException("Movie Product Not Found"));
 
     // Update Genre nếu có
-    if (entity.getCategoryId() != null) {
-      Genre genre = genreRepository.findById(entity.getCategoryId())
+    if (entity.getGenreId() != null) {
+      Genre genre = genreRepository.findById(entity.getGenreId())
               .orElseThrow(() -> new NotFoundException("Genre Not Found"));
       movieProduct.setGenre(genre);
     }
 
-    // Quan hệ N - N với Author
-    if (entity.getAuthor() != null) {
-      Set<Author> authors = new HashSet<>();
-      for (Long authorId : entity.getAuthor()) {
-        Author author = authorRepository.findById(authorId)
-                .orElseThrow(() -> new NotFoundException("Author Not Found"));
-        authors.add(author);
-      }
-      movieProduct.setAuthor(authors);
+    // Quan hệ 1 - N với Author
+    if (entity.getAuthorId() != null) {
+      Author author = authorRepository.findById(entity.getAuthorId()).orElseThrow(() -> new NotFoundException("Author Not Found"));
+      movieProduct.setAuthor(author);
     }
 
     // Quan hệ N - N với Performer
@@ -118,11 +111,12 @@ public class MovieProductServiceImpl implements MovieProductService {
 
   @Override
   public void deleteEntity(long id) {
-    // TODO Auto-generated method stub
-    MovieProduct movieProduct = movieProductRepository.findById(id).orElseThrow(() -> new NotFoundException("Not Found MovieProduct"));
-    movieProduct.getAuthor().remove(this);
-    movieProduct.getPerformer().remove(this);
-    movieProductRepository.delete(movieProduct);
+    MovieProduct movie = movieProductRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Not Found MovieProduct"));
+
+    movie.setAuthor(null);
+    movie.setPerformer(null);
+    movieProductRepository.delete(movie);
   }
 
   @Override
@@ -158,26 +152,19 @@ public class MovieProductServiceImpl implements MovieProductService {
 
   @Override
   public MovieProduct likeMovie(long id) {
-    Optional<MovieProduct> movieOpt = movieProductRepository.findById(id);
-    if (movieOpt.isPresent()) {
-      var movieProduct = new MovieProduct();
-      movieProduct.setLikes(movieProduct.getLikes() + i);
-
-      return movieProductRepository.save(movieProduct);
-    }
-    throw new RuntimeException("Movie not found");
+    MovieProduct movie = movieProductRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Movie not found"));
+    movie.setLikes(movie.getLikes() + 1);
+    return movieProductRepository.save(movie);
   }
 
   @Override
   public MovieProductResponse dislikesMovie(long id) {
-    Optional<MovieProduct> movieOpt = movieProductRepository.findById(id);
-    if (movieOpt.isPresent()) {
-      var movieProduct = new MovieProduct();
-      movieProduct.setDislikes(movieProduct.getDislikes() - 1);
-      movieProductRepository.save(movieProduct);
-      return movieProductMapper.toDTO(movieProduct);
-    }
-    throw new RuntimeException("Movie not found");
+    MovieProduct movie = movieProductRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Movie not found"));
+    movie.setDislikes(movie.getDislikes() + 1);
+    movieProductRepository.save(movie);
+    return movieProductMapper.toDTO(movie);
   }
 
   @Override

@@ -58,6 +58,7 @@ public class MinioServiceImpl {
     }
     return fileName;
   }
+  //upload file anh
   public String upLoadFile(MultipartFile file, String path){
     try {
       boolean isExist = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
@@ -79,7 +80,7 @@ public class MinioServiceImpl {
       return "";
     }
   }
-
+//xem anh
   public byte[] getObject(String bucketName, String path) {
     try {
       // Lấy luồng dữ liệu từ MinIO
@@ -94,6 +95,12 @@ public class MinioServiceImpl {
       log.error("Error while streaming file: {}", e.getMessage());
       return new byte[0];
     }
+  }
+  //Dat ten anh
+  public String uploadFileImg(MultipartFile file, String directory) {
+    String fileName = directory + "/" + file.getOriginalFilename();
+    upLoadFile(file, fileName);
+    return fileName;
   }
 
 }
