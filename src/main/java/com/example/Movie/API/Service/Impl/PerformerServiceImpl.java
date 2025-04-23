@@ -19,10 +19,14 @@ public class PerformerServiceImpl implements PerformerService {
     private PerformerRepository performerRepository;
     @Autowired
     private PerformerMapper performerMapper;
-
+    @Autowired
+    private MinioServiceImpl minioService;
     @Override
     public PerformerResponse createEntity(PerformerRequest request) throws Exception {
         var performer = performerMapper.requestToEntity(request);
+        final String fileStr = "Performer/" + request.getFileAvatar().getOriginalFilename();
+        minioService.upLoadFile(request.getFileAvatar(), fileStr);
+        performer.setAvatar(fileStr);
         performerRepository.save(performer);
         return performerMapper.toDTO(performer);
     }
@@ -30,6 +34,9 @@ public class PerformerServiceImpl implements PerformerService {
     @Override
     public PerformerResponse updateEntity(long id, PerformerRequest entity) {
         var performer = performerRepository.findById(id).orElse(null);
+        final String fileStr = "Performer/" + entity.getFileAvatar().getOriginalFilename();
+        minioService.upLoadFile(entity.getFileAvatar(), fileStr);
+        performer.setAvatar(fileStr);
         performerMapper.updateEntity(entity, performer);
         performerRepository.save(performer);
         return performerMapper.toDTO(performer);

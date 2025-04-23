@@ -16,12 +16,12 @@ public class PerformerController {
     @Autowired
     private PerformerService performerService;
     @PostMapping
-    public ResponseEntity<Object> addPerformer(@RequestBody PerformerRequest request) throws Exception {
+    public ResponseEntity<Object> addPerformer(@ModelAttribute PerformerRequest request) throws Exception {
         return ResponseBuilder.create().body(performerService.createEntity(request)).status(HttpStatus.OK).build();
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Object> updatePerformer(@PathVariable long id, @RequestBody PerformerRequest request) {
+    public ResponseEntity<Object> updatePerformer(@PathVariable long id, @ModelAttribute PerformerRequest request) {
         return ResponseBuilder.create().body(performerService.updateEntity(id, request)).status(HttpStatus.OK).build();
     }
 

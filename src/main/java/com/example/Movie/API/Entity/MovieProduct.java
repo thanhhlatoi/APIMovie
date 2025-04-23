@@ -29,12 +29,13 @@ public class MovieProduct  extends AbstractEntity<Long> {
   @ManyToOne
   @JoinColumn(name = "categoryId", nullable = false)
   private Category category;
+
   @OneToOne(mappedBy = "movieProduct", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   @JsonIgnore
   private MovieVideo movieVideo;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinTable(name="movie_author",joinColumns = @JoinColumn(name="movie_id"),inverseJoinColumns = @JoinColumn(name="author_id"))
+  @JoinColumn(name = "authorId", nullable = false)
   private Author author;
   @ManyToMany
   @JoinTable(name="movie_performer",joinColumns = @JoinColumn(name="movie_id"),inverseJoinColumns = @JoinColumn(name="performer_id"))

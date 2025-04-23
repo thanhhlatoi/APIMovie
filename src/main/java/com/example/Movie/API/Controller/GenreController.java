@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/category")
+@RequestMapping("/api/genre")
 public class GenreController {
   @Autowired
   private GenreService categoryService;
