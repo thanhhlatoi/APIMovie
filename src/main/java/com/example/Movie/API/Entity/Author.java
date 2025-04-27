@@ -1,5 +1,6 @@
 package com.example.Movie.API.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Data
 @Table(name = "author")
+//@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Author extends AbstractEntity<Long>{
   private String fullName;
   @DateTimeFormat(pattern = "yyyy-MM-dd")

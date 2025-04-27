@@ -23,21 +23,26 @@ public class MovieProduct  extends AbstractEntity<Long> {
   private int dislikes;
   private int views;
   private String imgMovie;
-  @ManyToOne
-  @JoinColumn(name = "genreId", nullable = false)
-  private Genre genre;
-  @ManyToOne
-  @JoinColumn(name = "categoryId", nullable = false)
-  private Category category;
+
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(name="movie_genre",joinColumns = @JoinColumn(name="movie_id"),inverseJoinColumns = @JoinColumn(name="genre_id"))
+  private Set<Genre> genres = new HashSet<>();
+
+
 
   @OneToOne(mappedBy = "movieProduct", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   @JsonIgnore
   private MovieVideo movieVideo;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumn(name = "authorId", nullable = false)
+  @JsonIgnore
   private Author author;
-  @ManyToMany
+  @ManyToOne
+  @JoinColumn(name = "categoryId", nullable = true)
+  @JsonIgnore
+  private Category category;
+  @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(name="movie_performer",joinColumns = @JoinColumn(name="movie_id"),inverseJoinColumns = @JoinColumn(name="performer_id"))
-  private Set<Performer> performer = new HashSet<>();
+  private Set<Performer> performers = new HashSet<>();
 }

@@ -24,8 +24,8 @@ public class MovieProductResponse {
   private String year;
   private int views;
   private String imgMovie;
-  private Genre genre;
+  private Set<GenreResponse> genres;
   private Author author;
   private Category category;
-  private Set<PerformerResponse> performer;
+  private Set<PerformerResponse> performers;
 }

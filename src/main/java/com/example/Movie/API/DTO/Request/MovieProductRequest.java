@@ -17,11 +17,8 @@ public class MovieProductRequest {
   private String description;
   private String time;
   private String year;
-  private int likes;
-  private int dislikes;
-  private int views;
   private MultipartFile image;
-  private Long genreId;
+  private Set<Long> genre;
   private Long authorId ;
   private Long categoryId;
   private Set<Long> performer ;

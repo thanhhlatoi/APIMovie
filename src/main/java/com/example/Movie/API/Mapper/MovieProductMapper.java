@@ -14,16 +14,18 @@ public interface MovieProductMapper extends EntityMapper<MovieProductRequest, Mo
 
   // Cập nhật thông tin từ Request vào Entity
   @Override
-  @Mapping(target = "author", ignore = true)
-  @Mapping(target = "performer", ignore = true)
+  @Mapping(target = "genres", ignore = true)
+  @Mapping(target = "performers", ignore = true)
   void updateEntity(MovieProductRequest request, @MappingTarget MovieProduct movieProduct);
 
   @Override
-  @Mapping(target = "author", ignore = true)
-  @Mapping(target = "performer", ignore = true)
+  @Mapping(target = "genres", ignore = true)
+  @Mapping(target = "performers", ignore = true)
   MovieProduct requestToEntity(MovieProductRequest request);
 
   @Override
+//  @Mapping(target = "genres", ignore = true)
+//  @Mapping(target = "performers", ignore = true)
   MovieProductResponse toDTO(MovieProduct entity);
 }
 

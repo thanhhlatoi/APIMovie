@@ -10,6 +10,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AuthorResponse {
+  private long id;
   private String fullName;
   private Date birthday;
   private boolean gender;

@@ -27,6 +27,4 @@ public class User extends AbstractEntity<Long> {
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(name="User_Role",joinColumns = @JoinColumn(name="UserId"),inverseJoinColumns = @JoinColumn(name="roleName"))
   Set<Role> roles = new HashSet<>();
-
-
 }

@@ -37,6 +37,8 @@ public class MovieVideoServiceImpl implements MovieVideoService {
     return MovieVideoResponse.builder()
             .movieProduct(savedMovieVideo.getMovieProduct())
             .videoFilm(savedMovieVideo.getUrlVideo())
+            .id(movieVideo.getId())
+            .watchedAt(movieVideo.getWatchedAt())
             .build();
   }
 
@@ -56,6 +58,8 @@ public class MovieVideoServiceImpl implements MovieVideoService {
     return movieVideos.map(movieVideo -> MovieVideoResponse.builder()
             .movieProduct(movieVideo.getMovieProduct())
             .videoFilm(movieVideo.getUrlVideo())
+            .id(movieVideo.getId())
+            .watchedAt(movieVideo.getWatchedAt())
             .build());
   }
 

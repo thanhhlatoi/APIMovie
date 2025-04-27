@@ -52,7 +52,6 @@ public class GenreServiceImpl implements GenreService {
   }
 
 
-  @PreAuthorize("hasRole('ADMIN')")
   @Override
   public GenreResponse getById(long id) {
     var users = genreRepository.findById(id).orElse(null);

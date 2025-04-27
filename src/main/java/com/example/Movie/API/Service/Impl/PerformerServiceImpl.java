@@ -10,6 +10,7 @@ import com.example.Movie.API.Service.PerformerService;
 import com.example.Movie.API.Utils.Pagination;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class PerformerServiceImpl implements PerformerService {
     private PerformerMapper performerMapper;
     @Autowired
     private MinioServiceImpl minioService;
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public PerformerResponse createEntity(PerformerRequest request) throws Exception {
         var performer = performerMapper.requestToEntity(request);
@@ -30,7 +32,7 @@ public class PerformerServiceImpl implements PerformerService {
         performerRepository.save(performer);
         return performerMapper.toDTO(performer);
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public PerformerResponse updateEntity(long id, PerformerRequest entity) {
         var performer = performerRepository.findById(id).orElse(null);
@@ -41,7 +43,7 @@ public class PerformerServiceImpl implements PerformerService {
         performerRepository.save(performer);
         return performerMapper.toDTO(performer);
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public void deleteEntity(long id) {
 
@@ -57,6 +59,7 @@ public class PerformerServiceImpl implements PerformerService {
 
     @Override
     public PerformerResponse getById(long id) {
-        return null;
+        var performer = performerRepository.findById(id).orElse(null);
+        return performer == null ? null : performerMapper.toDTO(performer);
     }
 }

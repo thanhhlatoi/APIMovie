@@ -13,10 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -35,136 +35,139 @@ public class MovieProductServiceImpl implements MovieProductService {
   private PerformerRepository performerRepository;
   @Autowired
   private CategoryRepository categoryRepository;
+
   @PreAuthorize("hasRole('ADMIN')")
   @Override
   public MovieProductResponse createEntity(MovieProductRequest request) {
-    //Quan he 1 - N
-    Genre genre = genreRepository.findById(request.getGenreId()).orElse(null);
     MovieProduct movieProduct = movieProductMapper.requestToEntity(request);
-    movieProduct.setGenre(genre);
-    Author author = authorRepository.findById(request.getAuthorId()).orElse(null);
-     movieProduct = movieProductMapper.requestToEntity(request);
-     movieProduct.setAuthor(author);
-     Category category = categoryRepository.findById(request.getCategoryId()).orElse(null);
-     movieProduct = movieProductMapper.requestToEntity(request);
-     movieProduct.setCategory(category);
-
-    // quan he N- N
-    Set<Performer> performers = new HashSet<>();
-    for(Long performerId : request.getPerformer()){
-      Performer performer = performerRepository.findById(performerId).orElseThrow(() -> new NotFoundException("Not Found Performer"));
-      performers.add(performer);
-    }
-    movieProduct.setPerformer(performers);
-    //upload anh
-    final String fileStr = "imgMovie/" + request.getImage().getOriginalFilename();
-    minioService.upLoadFile(request.getImage(), fileStr);
-    movieProduct.setImgMovie(fileStr);
-
+    setRelationships(movieProduct, request);
+    handleImageUpload(movieProduct, request.getImage());
     movieProductRepository.save(movieProduct);
     return movieProductMapper.toDTO(movieProduct);
   }
+
   @PreAuthorize("hasRole('ADMIN')")
   @Override
-  public MovieProductResponse updateEntity(long id, MovieProductRequest entity) {
+  public MovieProductResponse updateEntity(long id, MovieProductRequest request) {
     MovieProduct movieProduct = movieProductRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("Movie Product Not Found"));
 
-    // Update Genre nếu có
-    if (entity.getGenreId() != null) {
-      Genre genre = genreRepository.findById(entity.getGenreId())
-              .orElseThrow(() -> new NotFoundException("Genre Not Found"));
-      movieProduct.setGenre(genre);
-    }
-
-    // Quan hệ 1 - N với Author
-    if (entity.getAuthorId() != null) {
-      Author author = authorRepository.findById(entity.getAuthorId()).orElseThrow(() -> new NotFoundException("Author Not Found"));
-      movieProduct.setAuthor(author);
-    }
-
-    // Quan hệ N - N với Performer
-    if (entity.getPerformer() != null) {
-      Set<Performer> performers = new HashSet<>();
-      for (Long performerId : entity.getPerformer()) {
-        Performer performer = performerRepository.findById(performerId)
-                .orElseThrow(() -> new NotFoundException("Performer Not Found"));
-        performers.add(performer);
-      }
-      movieProduct.setPerformer(performers);
-    }
-
-    // Upload ảnh nếu có
-    if (entity.getImage() != null && !entity.getImage().isEmpty()) {
-      final String fileStr = "imgMovie/" + entity.getImage().getOriginalFilename();
-      minioService.upLoadFile(entity.getImage(), fileStr);
-      movieProduct.setImgMovie(fileStr);
-    }
-
-    // Cập nhật các field đơn khác (nội dung, tiêu đề, thời lượng, ...)
-    movieProductMapper.updateEntity(entity, movieProduct);
+    setRelationships(movieProduct, request);
+    handleImageUpload(movieProduct, request.getImage());
+    movieProductMapper.updateEntity(request, movieProduct);
 
     movieProductRepository.save(movieProduct);
     return movieProductMapper.toDTO(movieProduct);
   }
 
+  // Trích xuất các quan hệ vào phương thức riêng để tái sử dụng
+  private void setRelationships(MovieProduct movieProduct, MovieProductRequest request) {
+    // Xử lý quan hệ với Category - cho phép null
+    setCategoryRelationship(movieProduct, request.getCategoryId());
+
+    // Xử lý quan hệ với Author
+    setAuthorRelationship(movieProduct, request.getAuthorId());
+
+    // Xử lý quan hệ N-N với Genre
+    setGenreRelationships(movieProduct, request.getGenre());
+
+    // Xử lý quan hệ N-N với Performer
+    setPerformerRelationships(movieProduct, request.getPerformer());
+  }
+
+  private void setCategoryRelationship(MovieProduct movieProduct, Long categoryId) {
+    if (categoryId != null) {
+      Category category = categoryRepository.findById(categoryId)
+              .orElseThrow(() -> new NotFoundException("Not Found Category"));
+      movieProduct.setCategory(category);
+    }
+    // Không cần else vì mặc định đã là null
+  }
+
+  private void setAuthorRelationship(MovieProduct movieProduct, Long authorId) {
+    if (authorId != null) {
+      Author author = authorRepository.findById(authorId)
+              .orElseThrow(() -> new NotFoundException("Not Found Author"));
+      movieProduct.setAuthor(author);
+    }
+  }
+
+  private void setGenreRelationships(MovieProduct movieProduct, Set<Long> genreIds) {
+    if (genreIds != null && !genreIds.isEmpty()) {
+      Set<Genre> genres = new HashSet<>();
+      for (Long genreId : genreIds) {
+        Genre genre = genreRepository.findById(genreId)
+                .orElseThrow(() -> new NotFoundException("Not Found Genre with ID: " + genreId));
+        genres.add(genre);
+      }
+      movieProduct.setGenres(genres);
+    }
+  }
+
+  private void setPerformerRelationships(MovieProduct movieProduct, Set<Long> performerIds) {
+    if (performerIds != null && !performerIds.isEmpty()) {
+      Set<Performer> performers = new HashSet<>();
+      for (Long performerId : performerIds) {
+        Performer performer = performerRepository.findById(performerId)
+                .orElseThrow(() -> new NotFoundException("Not Found Performer with ID: " + performerId));
+        performers.add(performer);
+      }
+      movieProduct.setPerformers(performers);
+    }
+  }
+
+  private void handleImageUpload(MovieProduct movieProduct, MultipartFile image) {
+    if (image != null && !image.isEmpty()) {
+      final String fileStr = "imgMovie/" + image.getOriginalFilename();
+      minioService.upLoadFile(image, fileStr);
+      movieProduct.setImgMovie(fileStr);
+    }
+  }
 
   @Override
   public void deleteEntity(long id) {
     MovieProduct movie = movieProductRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("Not Found MovieProduct"));
 
+    // Xóa các quan hệ trước khi xóa entity để tránh lỗi khóa ngoại
     movie.setAuthor(null);
-    movie.setPerformer(null);
+    movie.setGenres(null);
+    movie.setPerformers(null);
+    movie.setCategory(null);
+
     movieProductRepository.delete(movie);
   }
 
   @Override
   public Page<MovieProductResponse> getAll(Pagination pagination) {
-    Page<MovieProduct> movieProduct = movieProductRepository.findAll(pagination);
-    return movieProduct.map(movieProductMapper::toDTO);
+    return movieProductRepository.findAll(pagination)
+            .map(movieProductMapper::toDTO);
   }
-
-//  @Override
-//  public List<MovieProductResponse> getAll() {
-//    List<MovieProduct> movieProducts = movieProductRepository.findAll();
-//    return movieProducts.stream().map(user -> {
-//      return movieProductMapper.toDTO(user);
-//    }).collect(Collectors.toList());
-//  }
 
   @Override
   public MovieProductResponse getById(long id) {
-    // Tìm MovieProduct theo id
-    var movieProduct = movieProductRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("MovieProduct not found"));
-
-    // Tăng view (giả sử mỗi lần gọi hàm views +1)
+    MovieProduct movieProduct = findMovieProductById(id);
     movieProduct.setViews(movieProduct.getViews() + 1);
-
-    // Lưu thay đổi vào database
-    var updatedMovieProduct = movieProductRepository.save(movieProduct);
-
-    // Chuyển đổi sang DTO
-    return movieProductMapper.toDTO(updatedMovieProduct);
+    return movieProductMapper.toDTO(movieProductRepository.save(movieProduct));
   }
-
 
   @Override
   public MovieProduct likeMovie(long id) {
-    MovieProduct movie = movieProductRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Movie not found"));
+    MovieProduct movie = findMovieProductById(id);
     movie.setLikes(movie.getLikes() + 1);
     return movieProductRepository.save(movie);
   }
 
   @Override
   public MovieProductResponse dislikesMovie(long id) {
-    MovieProduct movie = movieProductRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Movie not found"));
+    MovieProduct movie = findMovieProductById(id);
     movie.setDislikes(movie.getDislikes() + 1);
-    movieProductRepository.save(movie);
-    return movieProductMapper.toDTO(movie);
+    return movieProductMapper.toDTO(movieProductRepository.save(movie));
+  }
+
+  private MovieProduct findMovieProductById(long id) {
+    return movieProductRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Movie not found"));
   }
 
   @Override
@@ -174,9 +177,8 @@ public class MovieProductServiceImpl implements MovieProductService {
 
   @Override
   public MovieProductResponse getMovieProductWithVideo(long id) {
-    MovieProduct movieProduct = movieProductRepository.findByIdWithMovieVideo(id)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy MovieProduct với id: " + id));
-    return movieProductMapper.toDTO(movieProduct);
+    return movieProductRepository.findByIdWithMovieVideo(id)
+            .map(movieProductMapper::toDTO)
+            .orElseThrow(() -> new NotFoundException("Không tìm thấy MovieProduct với id: " + id));
   }
-
 }
