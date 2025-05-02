@@ -1,217 +1,25 @@
-//package com.example.Movie.API.Service.Impl;
-//
-//import io.minio.GetObjectArgs;
-//import io.minio.MinioClient;
-//import io.minio.PutObjectArgs;
-//import lombok.extern.log4j.Log4j2;
-//import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.stereotype.Service;
-//import org.springframework.web.multipart.MultipartFile;
-//
-//import java.io.*;
-//import java.nio.file.Files;
-//import java.util.List;
-//import java.util.Objects;
-//import java.util.stream.Collectors;
-//
-//@Service
-//@Log4j2
-//public class HlsServiceImpl {
-//
-//  @Value("${spring.video.output-dir}")
-//  private String baseOutputDir;
-//
-//  @Value("${spring.ffmpeg.path}")
-//  private String ffmpegPath;
-//
-//  @Value("${spring.minio.bucket-name}")
-//  private String bucketName;
-//
-//  private final MinioClient minioClient;
-//
-//  public HlsServiceImpl(MinioClient minioClient) {
-//    this.minioClient = minioClient;
-//  }
-//
-//  private String convertMp4ToHls(String inputPath, String outputDir) throws IOException, InterruptedException {
-//    File inputFile = new File(inputPath);
-//    if (!inputFile.exists()) {
-//      throw new IOException("❌ File không tồn tại: " + inputPath);
-//    }
-//
-//    // Adaptive Bitrate (ABR) - Tạo nhiều độ phân giải
-//    String command = String.format(
-//            "%s -i %s " +
-//                    "-map 0:v -map 0:a " +
-//                    "-b:v:0 800k -s:v:0 640x360 " +
-//                    "-b:v:1 1200k -s:v:1 1280x720 " +
-//                    "-b:v:2 2500k -s:v:2 1920x1080 " +
-//                    "-c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k " +
-//                    "-hls_time 10 -hls_list_size 0 -f hls %s/output.m3u8",
-//            ffmpegPath, inputPath, outputDir
-//    );
-//
-//    log.info("⚙️ Đang chạy FFmpeg: {}", command);
-//
-//    // Chạy lệnh theo OS
-//    ProcessBuilder builder;
-//    if (System.getProperty("os.name").toLowerCase().contains("win")) {
-//      builder = new ProcessBuilder("cmd.exe", "/c", command);
-//    } else {
-//      builder = new ProcessBuilder("/bin/sh", "-c", command);
-//    }
-//
-//    builder.redirectErrorStream(true);
-//    Process process = builder.start();
-//
-//    // Đọc log từ FFmpeg
-//    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-//      String line;
-//      while ((line = reader.readLine()) != null) {
-//        log.info(line);
-//      }
-//    }
-//
-//    int exitCode = process.waitFor();
-//    if (exitCode != 0) {
-//      throw new IOException("❌ FFmpeg lỗi! Mã lỗi: " + exitCode);
-//    }
-//
-//    log.info("✅ HLS tạo thành công: {}/output.m3u8", outputDir);
-//    return outputDir.replace("/tmp/videos/", "") + "/output.m3u8";
-////    return outputDir + "/output.m3u8";
-//  }
-//
-//  private void uploadFolderToMinIO(File folder, String minioFolder) {
-//    if (!folder.exists() || !folder.isDirectory()) {
-//      log.error("❌ Thư mục không tồn tại: {}", folder.getAbsolutePath());
-//      return;
-//    }
-//
-//    File[] files = folder.listFiles();
-//    if (files == null) {
-//      log.error("❌ Không tìm thấy file nào trong thư mục: {}", folder.getAbsolutePath());
-//      return;
-//    }
-//
-//    for (File file : files) {
-//      try (InputStream inputStream = new FileInputStream(file)) {
-//        log.info("📤 Upload file: {} lên MinIO...", file.getName());
-//        minioClient.putObject(
-//                PutObjectArgs.builder()
-//                        .bucket(bucketName)
-//                        .object(minioFolder + "/" + file.getName())
-//                        .stream(inputStream, file.length(), -1)
-//                        .contentType(Files.probeContentType(file.toPath()))
-//                        .build()
-//        );
-//        log.info("✅ Upload thành công: {}", file.getName());
-//      } catch (Exception e) {
-//        log.error("❌ Lỗi upload {}: {}", file.getName(), e.getMessage());
-//      }
-//    }
-//  }
-//
-//public String updateM3U8File(String bucketName, String path) {
-//  try {
-//    // Lấy thư mục của file .m3u8
-//    String videoFolder = new File(path).getParentFile().getName();
-//
-//    InputStream stream = minioClient.getObject(GetObjectArgs.builder()
-//            .bucket(bucketName)
-//            .object(path)
-//            .build());
-//
-//    List<String> lines = new BufferedReader(new InputStreamReader(stream))
-//            .lines()
-//            .collect(Collectors.toList());
-//
-//    // Tạo base URL dựa trên videoFolder
-//    String baseUrl = "http://192.168.100.193:8082/api/videos/hls-stream?bucketName="
-//            + bucketName + "&path=" + videoFolder + "/";
-//
-//    String updatedContent = lines.stream()
-//            .map(line -> line.endsWith(".ts") ? baseUrl + line : line)
-//            .collect(Collectors.joining("\n"));
-//
-//    return updatedContent;
-//  } catch (Exception e) {
-//    log.error("Error updating M3U8 file: {}", e.getMessage());
-//    return null;
-//  }
-//}
-//
-//  public String uploadFile(MultipartFile file) {
-//    try {
-//      // Kiểm tra và lấy tên file gốc
-//      String originalFileName = file.getOriginalFilename();
-//      if (originalFileName == null || !originalFileName.toLowerCase().endsWith(".mp4")) {
-//        throw new IllegalArgumentException("❌ Chỉ hỗ trợ upload file .mp4");
-//      }
-//
-//      // Lấy tên file không có phần mở rộng
-//      String fileNameWithoutExt = originalFileName.replace(".mp4", "");
-//      File videoDir = new File(baseOutputDir, fileNameWithoutExt);
-//
-//      // Tạo thư mục chứa video nếu chưa tồn tại
-//      if (!videoDir.exists() && !videoDir.mkdirs()) {
-//        throw new IOException("❌ Không thể tạo thư mục: " + videoDir);
-//      }
-//
-//      // Lưu file video vào thư mục
-//      File savedFile = new File(videoDir, originalFileName);
-//      file.transferTo(savedFile);
-//      log.info("✅ Video đã lưu: {}", savedFile.getAbsolutePath());
-//
-//      // Chuyển đổi video sang HLS
-//      String hlsOutputPath = convertMp4ToHls(savedFile.getAbsolutePath(), videoDir.getAbsolutePath());
-//
-//      // Upload thư mục chứa HLS lên MinIO
-//      uploadFolderToMinIO(videoDir, fileNameWithoutExt);
-//
-//      // Trả về đường dẫn file M3U8 đã tạo
-//      return hlsOutputPath;
-//    } catch (IllegalArgumentException e) {
-//      log.warn("⚠️ Lỗi định dạng file: {}", e.getMessage());
-//      return "ERROR: " + e.getMessage();
-//    } catch (IOException e) {
-//      log.error("❌ Lỗi khi xử lý file: {}", e.getMessage(), e);
-//      return "ERROR: Không thể xử lý file.";
-//    } catch (Exception e) {
-//      log.error("❌ Lỗi không xác định khi upload file: {}", e.getMessage(), e);
-//      return "ERROR: Đã xảy ra lỗi.";
-//    }
-//  }
-//
-//
-//}
-//
-//
-
-
 package com.example.Movie.API.Service.Impl;
 
+import com.example.Movie.API.Exception.VideoProcessingException;
+import com.example.Movie.API.Exception.VideoUploadException;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import lombok.extern.log4j.Log4j2;
+import jakarta.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.List;
-import java.util.Objects;
+import java.nio.file.*;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Service
-@Log4j2
+@Slf4j
 public class HlsServiceImpl {
-
   @Value("${spring.video.output-dir}")
   private String baseOutputDir;
 
@@ -221,90 +29,312 @@ public class HlsServiceImpl {
   @Value("${spring.minio.bucket-name}")
   private String bucketName;
 
+  @Value("${spring.video.max-upload-size:10737418240}") // 10GB
+  private long maxUploadSize;
+
+  @Value("${spring.video.supported-formats:mp4,avi,mov,mkv}")
+  private Set<String> supportedFormats;
+
+  @Value("${spring.hls.segment-duration:10}")
+  private int segmentDuration;
+
   private final MinioClient minioClient;
+  private final ExecutorService uploadExecutor;
 
   public HlsServiceImpl(MinioClient minioClient) {
     this.minioClient = minioClient;
+    this.uploadExecutor = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors(),
+            r -> {
+              Thread thread = Executors.defaultThreadFactory().newThread(r);
+              thread.setDaemon(true);
+              return thread;
+            }
+    );
   }
 
-  private String convertMp4ToHls(String inputPath, String outputDir) throws IOException, InterruptedException {
-    File inputFile = new File(inputPath);
-    if (!inputFile.exists()) {
-      throw new IOException("❌ File không tồn tại: " + inputPath);
-    }
+  /**
+   * Upload video file and convert to HLS
+   */
+  public String uploadFile(MultipartFile file) {
+    Path videoDir = null;
+    try {
+      // Validate file
+      validateFile(file);
 
-    // Tạo danh sách command
-    List<String> command = List.of(
-            ffmpegPath, "-i", inputPath,
-            "-map", "0:v", "-map", "0:a",
-            "-b:v:0", "800k", "-s:v:0", "640x360",
-            "-b:v:1", "1200k", "-s:v:1", "1280x720",
-            "-b:v:2", "2500k", "-s:v:2", "1920x1080",
-            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-            "-c:a", "aac", "-b:a", "128k",
-            "-hls_time", "10", "-hls_list_size", "0",
-            "-f", "hls", outputDir + "/output.m3u8"
-    );
+      // Create temp directory and save file
+      String originalFileName = file.getOriginalFilename();
+      String fileNameWithoutExt = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
+      videoDir = Paths.get(baseOutputDir, fileNameWithoutExt);
+      Path savedFilePath = saveFile(file, videoDir);
 
-    log.info("⚙️ Chạy FFmpeg: {}", String.join(" ", command));
+      // Convert to HLS
+      String hlsOutputPath = convertMp4ToHls(savedFilePath.toString(), videoDir.toString());
 
-    ProcessBuilder builder = new ProcessBuilder(command);
-    builder.redirectErrorStream(true);
-    Process process = builder.start();
+      // Upload to MinIO
+      uploadFolderToMinIO(videoDir.toFile(), fileNameWithoutExt);
 
-    // Đọc log từ FFmpeg
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        log.info(line);
+      // Cleanup temp files
+      cleanupTempFiles(videoDir);
+
+      return hlsOutputPath;
+
+    } catch (IllegalArgumentException e) {
+      log.warn("Upload validation error: {}", e.getMessage());
+      return "ERROR: " + e.getMessage();
+    } catch (IOException e) {
+      log.error("File handling error", e);
+      return "ERROR: Không thể xử lý file: " + e.getMessage();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      log.error("Process interrupted", e);
+      return "ERROR: Quá trình xử lý bị gián đoạn";
+    } catch (Exception e) {
+      log.error("Unexpected error during file upload", e);
+      return "ERROR: Lỗi không xác định: " + e.getMessage();
+    } finally {
+      // Ensure cleanup happens even if errors occur
+      if (videoDir != null) {
+        cleanupTempFiles(videoDir);
       }
     }
-
-    int exitCode = process.waitFor();
-    if (exitCode != 0) {
-      throw new IOException("❌ FFmpeg lỗi! Mã lỗi: " + exitCode);
-    }
-
-    log.info("✅ HLS tạo thành công: {}/output.m3u8", outputDir);
-    return outputDir.replace("/tmp/videos/", "") + "/output.m3u8";
   }
 
-  private void uploadFolderToMinIO(File folder, String minioFolder) {
-    if (!folder.exists() || !folder.isDirectory()) {
-      log.error("❌ Thư mục không tồn tại: {}", folder.getAbsolutePath());
-      return;
+  /**
+   * Validate uploaded file
+   */
+  private void validateFile(MultipartFile file) {
+    // Validate filename
+    String originalFileName = Optional.ofNullable(file.getOriginalFilename())
+            .orElseThrow(() -> new IllegalArgumentException("Tên file không hợp lệ"));
+
+    // Validate file size
+    if (file.getSize() > maxUploadSize) {
+      throw new IllegalArgumentException(
+              String.format("Kích thước file vượt quá giới hạn %d MB", maxUploadSize / 1024 / 1024)
+      );
     }
 
-    File[] files = folder.listFiles();
-    if (files == null || files.length == 0) {
-      log.error("❌ Không tìm thấy file nào trong thư mục: {}", folder.getAbsolutePath());
-      return;
+    // Validate file format
+    if (!isSupportedFormat(originalFileName)) {
+      throw new IllegalArgumentException(
+              "Định dạng file không được hỗ trợ. Các định dạng hỗ trợ: " + supportedFormats
+      );
+    }
+  }
+
+  /**
+   * Save file to temporary location
+   */
+  private Path saveFile(MultipartFile file, Path videoDir) throws IOException {
+    Files.createDirectories(videoDir);
+    Path savedFilePath = videoDir.resolve(file.getOriginalFilename());
+    try (InputStream inputStream = file.getInputStream()) {
+      Files.copy(inputStream, savedFilePath, StandardCopyOption.REPLACE_EXISTING);
+    }
+    log.info("Video saved: {}", savedFilePath);
+    return savedFilePath;
+  }
+
+  /**
+   * Convert video to HLS with detailed codec processing
+   */
+  private String convertMp4ToHls(String inputPath, String outputDir) throws IOException, InterruptedException {
+    Path inputFile = Paths.get(inputPath);
+    if (!Files.exists(inputFile)) {
+      throw new FileNotFoundException("File không tồn tại: " + inputPath);
     }
 
-    ExecutorService executor = Executors.newFixedThreadPool(4); // Upload song song
+    // Ensure output directory exists
+    Files.createDirectories(Paths.get(outputDir));
 
-    for (File file : files) {
-      executor.execute(() -> {
-        try (InputStream inputStream = new FileInputStream(file)) {
-          log.info("📤 Upload file: {} lên MinIO...", file.getName());
-          minioClient.putObject(
-                  PutObjectArgs.builder()
-                          .bucket(bucketName)
-                          .object(minioFolder + "/" + file.getName())
-                          .stream(inputStream, file.length(), -1)
-                          .contentType(Objects.requireNonNullElse(Files.probeContentType(file.toPath()), "application/octet-stream"))
-                          .build()
-          );
-          log.info("✅ Upload thành công: {}", file.getName());
-        } catch (Exception e) {
-          log.error("❌ Lỗi upload {}: {}", file.getName(), e.getMessage());
+    // FFmpeg command with multiple processing options
+    List<String> ffmpegCommands = new ArrayList<>(Arrays.asList(
+            ffmpegPath,
+            "-i", inputPath,
+            // Split and scale filter
+            "-filter_complex",
+            "[0:v]split=3[v1][v2][v3];" +
+                    "[v1]scale=640:360,format=yuv420p[v1out];" +
+                    "[v2]scale=1280:720,format=yuv420p[v2out];" +
+                    "[v3]scale=1920:1080,format=yuv420p[v3out]",
+
+            // Multiple quality renditions
+            "-map", "[v1out]", "-map", "0:a",
+            "-c:v:0", "libx264", "-b:v:0", "800k", "-maxrate:v:0", "800k", "-bufsize:v:0", "1600k",
+            "-map", "[v2out]", "-map", "0:a",
+            "-c:v:1", "libx264", "-b:v:1", "1200k", "-maxrate:v:1", "1200k", "-bufsize:v:1", "2400k",
+            "-map", "[v3out]", "-map", "0:a",
+            "-c:v:2", "libx264", "-b:v:2", "2500k", "-maxrate:v:2", "2500k", "-bufsize:v:2", "5000k",
+
+            // Audio configuration
+            "-c:a", "aac", "-b:a", "128k", "-ac", "2",
+
+            // HLS specific settings
+            "-hls_time", String.valueOf(segmentDuration),
+            "-hls_list_size", "0",
+            "-hls_segment_filename", outputDir + "/output_%v_%05d.ts",
+            "-var_stream_map", "v:0,a:0 v:1,a:1 v:2,a:2",
+            "-master_pl_name", "master.m3u8",
+            "-f", "hls",
+            outputDir + "/index_%v.m3u8"
+    ));
+
+    // Execute FFmpeg with improved error handling
+    ProcessBuilder processBuilder = new ProcessBuilder(ffmpegCommands)
+            .redirectErrorStream(true);
+
+    try {
+      Process process = processBuilder.start();
+
+      // Capture FFmpeg output asynchronously
+      CompletableFuture<Void> logFuture = CompletableFuture.runAsync(() -> {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+          reader.lines().forEach(line -> log.debug("FFmpeg output: {}", line));
+        } catch (IOException e) {
+          log.error("Error reading FFmpeg log", e);
         }
       });
-    }
 
-    executor.shutdown();
+      // Wait with timeout
+      boolean finished = process.waitFor(2, TimeUnit.HOURS);
+      if (!finished) {
+        process.destroyForcibly();
+        throw new VideoProcessingException("Chuyển đổi video vượt quá thời gian cho phép");
+      }
+
+      // Check exit code
+      int exitCode = process.exitValue();
+      if (exitCode != 0) {
+        throw new VideoProcessingException("Chuyển đổi FFmpeg thất bại. Mã lỗi: " + exitCode);
+      }
+
+      log.info("HLS conversion successful: {}/master.m3u8", outputDir);
+      return outputDir.replace("/tmp/videos/", "") + "/master.m3u8";
+
+    } catch (IOException | InterruptedException e) {
+      log.error("Video conversion error", e);
+      throw e;
+    }
   }
 
+  /**
+   * Upload HLS files to MinIO with parallel processing and retry mechanism
+   */
+  private void uploadFolderToMinIO(File folder, String minioFolder) {
+    File[] files = Optional.ofNullable(folder.listFiles(f ->
+            f.isFile() && (f.getName().endsWith(".ts") || f.getName().endsWith(".m3u8"))
+    )).orElse(new File[0]);
+
+    if (files.length == 0) {
+      log.error("No files found for upload in: {}", folder.getAbsolutePath());
+      return;
+    }
+
+    List<CompletableFuture<Void>> uploadTasks = Arrays.stream(files)
+            .map(file -> CompletableFuture.runAsync(() -> uploadFileWithRetry(file, minioFolder), uploadExecutor))
+            .collect(Collectors.toList());
+
+    // Wait for all uploads to complete
+    try {
+      CompletableFuture.allOf(uploadTasks.toArray(new CompletableFuture[0])).join();
+    } catch (CompletionException e) {
+      throw new VideoUploadException("Lỗi khi tải lên tệp video", e.getCause());
+    }
+  }
+
+  /**
+   * Upload single file with retry mechanism
+   */
+  private void uploadFileWithRetry(File file, String minioFolder) {
+    int maxRetries = 3;
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try (InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
+        minioClient.putObject(
+                PutObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(minioFolder + "/" + file.getName())
+                        .stream(inputStream, file.length(), -1)
+                        .contentType(determineContentType(file))
+                        .build()
+        );
+        log.info("Upload successful: {}", file.getName());
+        return;
+      } catch (Exception e) {
+        if (attempt == maxRetries) {
+          log.error("Upload failed after {} attempts: {} - {}",
+                  maxRetries, file.getName(), e.getMessage());
+          throw new VideoUploadException("Không thể tải lên file: " + file.getName(), e);
+        }
+        log.warn("Upload error, retrying attempt {}: {} - {}",
+                attempt, file.getName(), e.getMessage());
+
+        try {
+          Thread.sleep(1000L * attempt);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+          break;
+        }
+      }
+    }
+  }
+
+  /**
+   * Clean up temporary files after processing
+   */
+  private void cleanupTempFiles(Path videoDir) {
+    try {
+      if (Files.exists(videoDir)) {
+        Files.walk(videoDir)
+                .sorted(Comparator.reverseOrder())
+                .forEach(path -> {
+                  try {
+                    Files.delete(path);
+                    log.debug("Deleted: {}", path);
+                  } catch (IOException e) {
+                    log.warn("Failed to delete: {}", path, e);
+                  }
+                });
+        log.info("Cleaned up temporary directory: {}", videoDir);
+      }
+    } catch (IOException e) {
+      log.warn("Failed to cleanup temporary directory: {}", videoDir, e);
+    }
+  }
+
+  /**
+   * Get file extension
+   */
+  private String getFileExtension(String fileName) {
+    int lastDotIndex = fileName.lastIndexOf('.');
+    return (lastDotIndex == -1) ? "" : fileName.substring(lastDotIndex + 1).toLowerCase();
+  }
+
+  /**
+   * Check if file format is supported
+   */
+  private boolean isSupportedFormat(String fileName) {
+    String fileExt = getFileExtension(fileName);
+    return supportedFormats.stream()
+            .anyMatch(format -> format.equalsIgnoreCase(fileExt));
+  }
+
+  /**
+   * Determine content type of a file
+   */
+  private String determineContentType(File file) {
+    try {
+      return Optional.ofNullable(Files.probeContentType(file.toPath()))
+              .orElse("application/octet-stream");
+    } catch (IOException e) {
+      log.warn("Cannot determine content type for {}", file.getName());
+      return "application/octet-stream";
+    }
+  }
+
+  /**
+   * Update M3U8 file paths
+   */
   public String updateM3U8File(String bucketName, String path) {
     try (InputStream stream = minioClient.getObject(GetObjectArgs.builder()
             .bucket(bucketName)
@@ -313,51 +343,33 @@ public class HlsServiceImpl {
          BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
 
       String videoFolder = new File(path).getParentFile().getName();
-      String baseUrl = "http://192.168.100.193:8082/api/videos/hls-stream?bucketName="
+      String baseUrl = "http://localhost:8082/api/videos/hls-stream?bucketName="
               + bucketName + "&path=" + videoFolder + "/";
 
-      String updatedContent = reader.lines()
+      return reader.lines()
               .map(line -> line.endsWith(".ts") ? baseUrl + line : line)
               .collect(Collectors.joining("\n"));
 
-      return updatedContent;
     } catch (Exception e) {
-      log.error("❌ Lỗi cập nhật M3U8: {}", e.getMessage());
-      return null;
+      log.error("Error updating M3U8: {}", e.getMessage());
+      throw new VideoProcessingException("Lỗi khi cập nhật file M3U8", e);
     }
   }
 
-  public String uploadFile(MultipartFile file) {
+  /**
+   * Gracefully shutdown resources
+   */
+  @PreDestroy
+  public void shutdown() {
+    log.info("Shutting down HLS service resources");
+    uploadExecutor.shutdown();
     try {
-      String originalFileName = file.getOriginalFilename();
-      if (originalFileName == null || !originalFileName.toLowerCase().endsWith(".mp4")) {
-        throw new IllegalArgumentException("❌ Chỉ hỗ trợ upload file .mp4");
+      if (!uploadExecutor.awaitTermination(60, TimeUnit.SECONDS)) {
+        uploadExecutor.shutdownNow();
       }
-
-      String fileNameWithoutExt = originalFileName.replace(".mp4", "");
-      File videoDir = new File(baseOutputDir, fileNameWithoutExt);
-      if (!videoDir.exists() && !videoDir.mkdirs()) {
-        throw new IOException("❌ Không thể tạo thư mục: " + videoDir);
-      }
-
-      File savedFile = saveMultipartFile(file, new File(videoDir, originalFileName));
-      log.info("✅ Video đã lưu: {}", savedFile.getAbsolutePath());
-
-      String hlsOutputPath = convertMp4ToHls(savedFile.getAbsolutePath(), videoDir.getAbsolutePath());
-
-      uploadFolderToMinIO(videoDir, fileNameWithoutExt);
-
-      return hlsOutputPath;
-    } catch (Exception e) {
-      log.error("❌ Lỗi upload file: {}", e.getMessage(), e);
-      return "ERROR: Đã xảy ra lỗi.";
+    } catch (InterruptedException e) {
+      uploadExecutor.shutdownNow();
+      Thread.currentThread().interrupt();
     }
-  }
-
-  private File saveMultipartFile(MultipartFile file, File destination) throws IOException {
-    try (InputStream inputStream = file.getInputStream()) {
-      Files.copy(inputStream, destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
-    }
-    return destination;
   }
 }

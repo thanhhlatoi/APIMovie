@@ -10,5 +10,5 @@ import org.springframework.web.multipart.MultipartFile;
 @NoArgsConstructor
 public class MovieVideoRequest {
   private MultipartFile fileVideo;
-  private long movieProductId;
+  private Long movieProductId;
 }
