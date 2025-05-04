@@ -139,6 +139,9 @@ public class HlsServiceImpl {
   /**
    * Convert video to HLS with detailed codec processing
    */
+  /**
+   * Convert video to HLS with multiple quality resolutions (280p, 560p, 780p, 1080p)
+   */
   private String convertMp4ToHls(String inputPath, String outputDir) throws IOException, InterruptedException {
     Path inputFile = Paths.get(inputPath);
     if (!Files.exists(inputFile)) {
@@ -148,24 +151,33 @@ public class HlsServiceImpl {
     // Ensure output directory exists
     Files.createDirectories(Paths.get(outputDir));
 
-    // FFmpeg command with multiple processing options
+    // FFmpeg command with specified resolutions
     List<String> ffmpegCommands = new ArrayList<>(Arrays.asList(
             ffmpegPath,
             "-i", inputPath,
-            // Split and scale filter
+            // Split and scale filter for 4 different resolutions
             "-filter_complex",
-            "[0:v]split=3[v1][v2][v3];" +
-                    "[v1]scale=640:360,format=yuv420p[v1out];" +
-                    "[v2]scale=1280:720,format=yuv420p[v2out];" +
-                    "[v3]scale=1920:1080,format=yuv420p[v3out]",
+            "[0:v]split=4[v1][v2][v3][v4];" +
+                    "[v1]scale=280:-2,format=yuv420p[v1out];" +
+                    "[v2]scale=560:-2,format=yuv420p[v2out];" +
+                    "[v3]scale=780:-2,format=yuv420p[v3out];" +
+                    "[v4]scale=1920:1080,format=yuv420p[v4out]",
 
-            // Multiple quality renditions
+            // 280p - lowest quality
             "-map", "[v1out]", "-map", "0:a",
-            "-c:v:0", "libx264", "-b:v:0", "800k", "-maxrate:v:0", "800k", "-bufsize:v:0", "1600k",
+            "-c:v:0", "libx264", "-b:v:0", "280k", "-maxrate:v:0", "280k", "-bufsize:v:0", "560k",
+
+            // 560p - low quality
             "-map", "[v2out]", "-map", "0:a",
-            "-c:v:1", "libx264", "-b:v:1", "1200k", "-maxrate:v:1", "1200k", "-bufsize:v:1", "2400k",
+            "-c:v:1", "libx264", "-b:v:1", "560k", "-maxrate:v:1", "560k", "-bufsize:v:1", "1120k",
+
+            // 780p - medium quality
             "-map", "[v3out]", "-map", "0:a",
-            "-c:v:2", "libx264", "-b:v:2", "2500k", "-maxrate:v:2", "2500k", "-bufsize:v:2", "5000k",
+            "-c:v:2", "libx264", "-b:v:2", "780k", "-maxrate:v:2", "780k", "-bufsize:v:2", "1560k",
+
+            // 1080p - high quality
+            "-map", "[v4out]", "-map", "0:a",
+            "-c:v:3", "libx264", "-b:v:3", "1080k", "-maxrate:v:3", "1080k", "-bufsize:v:3", "2160k",
 
             // Audio configuration
             "-c:a", "aac", "-b:a", "128k", "-ac", "2",
@@ -174,7 +186,7 @@ public class HlsServiceImpl {
             "-hls_time", String.valueOf(segmentDuration),
             "-hls_list_size", "0",
             "-hls_segment_filename", outputDir + "/output_%v_%05d.ts",
-            "-var_stream_map", "v:0,a:0 v:1,a:1 v:2,a:2",
+            "-var_stream_map", "v:0,a:0 v:1,a:1 v:2,a:2 v:3,a:3",
             "-master_pl_name", "master.m3u8",
             "-f", "hls",
             outputDir + "/index_%v.m3u8"

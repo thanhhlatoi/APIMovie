@@ -172,6 +172,9 @@ public class MovieProductServiceImpl implements MovieProductService {
 
   @Override
   public List<MovieProduct> searchMoviesByTitle(String title) {
+    if (title == null || title.isEmpty()) {
+      return List.of(); // Trả về danh sách rỗng thay vì truy vấn không cần thiết
+    }
     return movieProductRepository.findByTitleContaining(title);
   }
 
@@ -180,5 +183,30 @@ public class MovieProductServiceImpl implements MovieProductService {
     return movieProductRepository.findByIdWithMovieVideo(id)
             .map(movieProductMapper::toDTO)
             .orElseThrow(() -> new NotFoundException("Không tìm thấy MovieProduct với id: " + id));
+  }
+
+  @Override
+  public List<MovieProduct> searchMoviesByYear(String year) {
+    return movieProductRepository.findByYear(year);
+  }
+
+  @Override
+  public List<MovieProduct> searchMoviesByGenre(Long genreId) {
+    return movieProductRepository.findByGenreId(genreId);
+  }
+
+  @Override
+  public List<MovieProduct> searchMoviesByCategory(Long categoryId) {
+    return movieProductRepository.findByCategoryId(categoryId);
+  }
+
+  @Override
+  public List<MovieProduct> searchMoviesByAuthor(Long authorId) {
+    return movieProductRepository.findByAuthorId(authorId);
+  }
+
+  @Override
+  public List<MovieProduct> searchMoviesByPerformer(Long performerId) {
+    return movieProductRepository.findByPerformerId(performerId);
   }
 }

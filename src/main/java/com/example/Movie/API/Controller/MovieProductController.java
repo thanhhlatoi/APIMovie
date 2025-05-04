@@ -2,6 +2,7 @@ package com.example.Movie.API.Controller;
 
 import com.example.Movie.API.DTO.Request.MovieProductRequest;
 import com.example.Movie.API.DTO.Response.ResponseBuilder;
+import com.example.Movie.API.Entity.MovieProduct;
 import com.example.Movie.API.Service.Impl.MinioServiceImpl;
 import com.example.Movie.API.Service.MinioService;
 import com.example.Movie.API.Service.MovieProductService;
@@ -88,6 +89,37 @@ public class MovieProductController {
   @GetMapping("/{id}")
   public ResponseEntity<Object> getMovieById(@PathVariable long id) {
     return ResponseBuilder.create().body(movieProductService.getById(id)).status(HttpStatus.OK).build();
+  }
+  // Tìm kiếm cơ bản - chỉ dùng một tiêu chí
+  @GetMapping("/search/basic")
+  public ResponseEntity<List<MovieProduct>> searchMoviesBasic(
+          @RequestParam(required = false) String title,
+          @RequestParam(required = false) String year,
+          @RequestParam(required = false) Long genreId,
+          @RequestParam(required = false) Long categoryId,
+          @RequestParam(required = false) Long authorId,
+          @RequestParam(required = false) Long performerId) {
+
+    List<MovieProduct> results;
+
+    if (title != null && !title.isEmpty()) {
+      results = movieProductService.searchMoviesByTitle(title);
+    } else if (year != null && !year.isEmpty()) {
+      results = movieProductService.searchMoviesByYear(year);
+    } else if (genreId != null) {
+      results = movieProductService.searchMoviesByGenre(genreId);
+    } else if (categoryId != null) {
+      results = movieProductService.searchMoviesByCategory(categoryId);
+    } else if (authorId != null) {
+      results = movieProductService.searchMoviesByAuthor(authorId);
+    } else if (performerId != null) {
+      results = movieProductService.searchMoviesByPerformer(performerId);
+    } else {
+      // Nếu không có tham số nào, trả về danh sách rỗng
+      return ResponseEntity.badRequest().build();
+    }
+
+    return ResponseEntity.ok(results);
   }
 
 }
