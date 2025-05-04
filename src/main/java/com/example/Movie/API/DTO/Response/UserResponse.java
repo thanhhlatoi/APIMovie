@@ -27,4 +27,6 @@ public class UserResponse {
   private boolean gender;
   private String profilePictureUrl;
   List<FavoriteResponse> favoritesResponses;
+  private boolean verified;
+  private boolean active;
 }

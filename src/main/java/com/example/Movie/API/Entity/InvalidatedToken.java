@@ -1,13 +1,12 @@
 package com.example.Movie.API.Entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -17,5 +16,12 @@ import java.util.Date;
 public class InvalidatedToken {
   @Id
   private String id;
-  private Date expiryDate;
+
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name = "expiry_date")
+  private LocalDateTime expiryDate;
+
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name = "invalidated_at")
+  private LocalDateTime invalidatedAt;
 }

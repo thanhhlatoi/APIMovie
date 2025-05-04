@@ -7,11 +7,9 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class IntrospectResponse {
-  private boolean valid;
-  private String scope;
-  private String subject;
+@AllArgsConstructor
+public class LogoutResponse {
+  private boolean success;
+  private String message;
 }
-

@@ -7,13 +7,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
-public class LogoutRequest {
-  @NotBlank(message = "Token không được để trống")
-  private String token;
-
-  private String refreshToken;
+@NoArgsConstructor
+@AllArgsConstructor
+public class VerificationRequest {
+  @NotBlank(message = "Mã xác minh không được để trống")
+  private String code;
 }
-

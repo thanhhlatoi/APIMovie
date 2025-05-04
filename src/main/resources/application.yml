@@ -35,6 +35,8 @@ spring:
       max-file-size: 1GB
       max-request-size: 1GB
 
+
+
   # Cấu hình JWT Token (Authentication)
   jwt:
     signer-key: "XIUMOY1zMZppH8gTKyXtLu7PJjG5zbI5N8vq28HbQFwO4+Av619325j6k9F3rMOG4pKwH0DIYYmSDorCex882/I3fz+vT4QDoF7YphgGm1J6O34bJJUqi0ZUBJtOzWw8"
@@ -52,11 +54,15 @@ spring:
           starttls:
             enable: true
 
-  # Cấu hình thư mục lưu video tạm thời trước khi upload lên MinIO
   video:
     output-dir: "/tmp/videos"
+    max-upload-size: 10737418240
+    supported-formats: mp4,avi,mov
   ffmpeg:
     path: "/usr/bin/ffmpeg"
+  hls:
+    segment-duration: 10
+    stream-base-url: "http://localhost:8082/api/videos/hls-stream"  # URL gốc cho streaming
 
 # Cấu hình logging
 logging:

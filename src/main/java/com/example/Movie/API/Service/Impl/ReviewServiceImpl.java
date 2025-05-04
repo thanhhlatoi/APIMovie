@@ -70,11 +70,7 @@ public class ReviewServiceImpl implements ReviewService {
         return review.map(reviewMapper::toDTO);
     }
 
-//    @Override
-//    public List<ReviewResponse> getAll() {
-//        List<Review> reviews = reviewRepository.findAll();
-//        return reviews.stream().map(user -> reviewMapper.toDTO(user)).collect(Collectors.toList());
-//    }
+
 
     @Override
     public ReviewResponse getById(long id) {
