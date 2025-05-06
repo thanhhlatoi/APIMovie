@@ -171,9 +171,13 @@ public class UserServiceImpl implements UserService {
   //Update Avatar
   private void updateUserAvatar(User user, MultipartFile fileAvatar) {
     if (fileAvatar != null && !fileAvatar.isEmpty()) {
-      final String filePath = "user/" + fileAvatar.getOriginalFilename();
-      minioService.upLoadFile(fileAvatar, filePath);
-      user.setProfilePictureUrl(filePath);
+      // Sử dụng phương thức mới
+      String avatarPath = minioService.uploadUserAvatar(fileAvatar);
+
+      // Kiểm tra xem upload có thành công không
+      if (avatarPath != null) {
+        user.setProfilePictureUrl(avatarPath);
+      }
     }
   }
 
