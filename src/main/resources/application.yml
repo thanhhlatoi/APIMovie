@@ -1,0 +1,83 @@
+server:
+  port: 8082
+
+
+spring:
+  application:
+    name: Movie-API
+
+  # Database Configuration
+  datasource:
+    url: jdbc:mysql://localhost:3306/movie
+    username: root
+    password: 110403
+
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  # MinIO Configuration (Video Storage)
+  minio:
+    endpoint: http://localhost:9000
+    access-key: Q7iuwwXWB1Th8fYRQ5b3
+    secret-key: 3Kxk9gXH1Wr0FG52IWnMhz6lU4XSeYJbuM9G8cnm
+    bucket-name: thanh
+
+  # File Upload Configuration - Increased to handle large video files
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 2GB
+      max-request-size: 2GB
+      location: ${java.io.tmpdir}
+
+  # JWT Configuration
+  jwt:
+    signer-key: "XIUMOY1zMZppH8gTKyXtLu7PJjG5zbI5N8vq28HbQFwO4+Av619325j6k9F3rMOG4pKwH0DIYYmSDorCex882/I3fz+vT4QDoF7YphgGm1J6O34bJJUqi0ZUBJtOzWw8"
+    expiration: 86400000  # 24 hours in milliseconds
+
+  # Email SMTP Configuration
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: zzthanh1104zz@gmail.com
+    password: lgofdlwsofqdtdpa
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  # Video Processing Configuration
+  video:
+    output-dir: "/tmp/videos"
+    max-upload-size: 10737418240  # 10GB in bytes
+    supported-formats: mp4,avi,mov,mkv,flv,wmv
+
+  # FFmpeg Configuration
+  ffmpeg:
+    path: "/usr/bin/ffmpeg"
+
+  # HLS Streaming Configuration
+  hls:
+    segment-duration: 10
+    stream-base-url: "http://localhost:8082/api/videos/hls-stream"
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    com.example: DEBUG
+    org.hibernate.SQL: DEBUG
